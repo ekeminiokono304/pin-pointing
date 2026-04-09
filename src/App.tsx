@@ -137,6 +137,8 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analysisResults, setAnalysisResults] = useState<Record<string, string>>({});
 
   // Poll logs every 5 seconds
   useEffect(() => {
@@ -156,6 +158,28 @@ export default function App() {
     const interval = setInterval(fetchLogs, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleAnalyze = async (log: LogEntry, index: number) => {
+    const key = `${log.id}-${log.timestamp}`;
+    setAnalyzingId(key);
+    try {
+      const response = await fetch('/api/analyze-threat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logEntry: log }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAnalysisResults(prev => ({ ...prev, [key]: data.analysis }));
+      } else {
+        setAnalysisResults(prev => ({ ...prev, [key]: "ERROR: AI Analysis failed. Check API Key." }));
+      }
+    } catch (error) {
+      console.error('Analysis failed:', error);
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!targetUrl) return;
@@ -361,44 +385,66 @@ export default function App() {
                       </td>
                     </tr>
                   ) : (
-                    logs.map((log, i) => (
-                      <motion.tr 
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        key={i} 
-                        className="border-b border-[#353534]/10 hover:bg-[#00ff41]/5 transition-colors group"
-                      >
-                        <td className="py-4 opacity-60">
-                          {new Date(log.timestamp).toLocaleTimeString()}
-                          <div className="text-[10px] opacity-40">{new Date(log.timestamp).toLocaleDateString()}</div>
-                        </td>
-                        <td className="py-4">
-                          <div className="text-[#00ff41] font-bold">{log.ipAddress}</div>
-                          <div className="text-[10px] opacity-50 truncate max-w-[150px]">{log.isp}</div>
-                        </td>
-                        <td className="py-4">
-                          <div>{log.location}</div>
-                          {log.fingerprint?.timezone && (
-                            <div className="text-[10px] text-yellow-500/70 flex items-center gap-1">
-                              <Globe className="w-3 h-3" /> {log.fingerprint.timezone}
+                      <React.Fragment key={i}>
+                        <motion.tr 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="border-b border-[#353534]/10 hover:bg-[#00ff41]/5 transition-colors group"
+                        >
+                          <td className="py-4 opacity-60">
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                            <div className="text-[10px] opacity-40">{new Date(log.timestamp).toLocaleDateString()}</div>
+                          </td>
+                          <td className="py-4">
+                            <div className="text-[#00ff41] font-bold">{log.ipAddress}</div>
+                            <div className="text-[10px] opacity-50 truncate max-w-[150px]">{log.isp}</div>
+                          </td>
+                          <td className="py-4">
+                            <div>{log.location}</div>
+                            {log.fingerprint?.timezone && (
+                              <div className="text-[10px] text-yellow-500/70 flex items-center gap-1">
+                                <Globe className="w-3 h-3" /> {log.fingerprint.timezone}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4">
+                            <div className="opacity-60">{log.device}</div>
+                            {log.fingerprint?.screen && (
+                              <div className="text-[10px] opacity-40 flex items-center gap-1">
+                                <Monitor className="w-3 h-3" /> {log.fingerprint.screen}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4">
+                            <div className="flex flex-col gap-2">
+                              <span className="px-2 py-0.5 bg-[#00ff41]/10 text-[#00ff41] text-[10px] border border-[#00ff41]/20 w-fit">
+                                {log.fingerprint ? 'VERIFIED' : 'ACTIVE'}
+                              </span>
+                              <button 
+                                onClick={() => handleAnalyze(log, i)}
+                                disabled={analyzingId === `${log.id}-${log.timestamp}`}
+                                className="text-[10px] uppercase text-[#00ff41] hover:underline flex items-center gap-1 disabled:opacity-50"
+                              >
+                                {analyzingId === `${log.id}-${log.timestamp}` ? (
+                                  <div className="w-2 h-2 border border-[#00ff41] border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Cpu className="w-3 h-3" />
+                                )}
+                                AI_ANALYZE
+                              </button>
                             </div>
-                          )}
-                        </td>
-                        <td className="py-4">
-                          <div className="opacity-60">{log.device}</div>
-                          {log.fingerprint?.screen && (
-                            <div className="text-[10px] opacity-40 flex items-center gap-1">
-                              <Monitor className="w-3 h-3" /> {log.fingerprint.screen}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-4">
-                          <span className="px-2 py-0.5 bg-[#00ff41]/10 text-[#00ff41] text-[10px] border border-[#00ff41]/20">
-                            {log.fingerprint ? 'VERIFIED' : 'ACTIVE'}
-                          </span>
-                        </td>
-                      </motion.tr>
-                    ))
+                          </td>
+                        </motion.tr>
+                        {analysisResults[`${log.id}-${log.timestamp}`] && (
+                          <tr className="bg-[#00ff41]/5 border-b border-[#353534]/10">
+                            <td colSpan={5} className="py-3 px-4">
+                              <div className="text-[10px] text-[#00ff41] leading-relaxed font-mono">
+                                {analysisResults[`${log.id}-${log.timestamp}`]}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                   )}
                 </tbody>
               </table>

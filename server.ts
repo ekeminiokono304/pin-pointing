@@ -33,6 +33,30 @@ async function startServer() {
     res.json(logs);
   });
 
+  // AI Analysis Endpoint
+  app.post('/api/analyze-threat', async (req, res) => {
+    const { logEntry } = req.body;
+    if (!logEntry) return res.status(400).json({ error: 'Log entry required' });
+
+    try {
+      const { GoogleGenAI } = await import('@google/genai');
+      const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY || '');
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+      const prompt = `Analyze this visitor log for potential security threats or interesting patterns. 
+      Visitor Data: ${JSON.stringify(logEntry)}
+      Provide a concise, tactical summary in 2-3 sentences. Focus on IP reputation, device anomalies, or geographic context. 
+      Format: [ANALYSIS] <your summary>`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      res.json({ analysis: response.text() });
+    } catch (error) {
+      console.error('AI Analysis failed:', error);
+      res.status(500).json({ error: 'AI analysis failed. Ensure GEMINI_API_KEY is set.' });
+    }
+  });
+
   // Endpoint to receive JS fingerprint data
   app.post('/api/log-fingerprint', (req, res) => {
     const { id, fingerprint, timestamp } = req.body;
