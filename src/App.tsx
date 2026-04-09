@@ -1,0 +1,374 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Terminal, 
+  Link as LinkIcon, 
+  Activity, 
+  Globe, 
+  Settings, 
+  Copy, 
+  Check, 
+  AlertCircle,
+  ExternalLink,
+  Monitor,
+  Shield,
+  Cpu,
+  LogOut
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+
+interface LogEntry {
+  timestamp: string;
+  ipAddress: string;
+  location: string;
+  isp: string;
+  device: string;
+  browser: string;
+  id: string;
+  fingerprint?: {
+    screen: string;
+    timezone: string;
+    language: string;
+    platform: string;
+  };
+}
+
+export default function App() {
+  const [targetUrl, setTargetUrl] = useState('');
+  const [generatedLink, setGeneratedLink] = useState('');
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Poll logs every 5 seconds
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const response = await fetch('/api/logs');
+        if (response.ok) {
+          const data = await response.json();
+          setLogs(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch logs:', error);
+      }
+    };
+
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleGenerate = async () => {
+    if (!targetUrl) return;
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUrl }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setGeneratedLink(data.trackingUrl);
+      }
+    } catch (error) {
+      console.error('Generation failed:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#131313] text-[#ebffe2] font-mono selection:bg-[#00ff41] selection:text-[#003907] relative overflow-hidden">
+      {/* Scanline Overlay */}
+      <div className="fixed inset-0 pointer-events-none z-50 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+      
+      {/* Grid Overlay */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.05]" 
+           style={{ backgroundImage: 'radial-gradient(#00ff41 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 bottom-0 w-16 bg-[#0e0e0e] border-r border-[#353534]/20 flex flex-col items-center py-8 z-40">
+        <div className="mb-12">
+          <Shield className="w-8 h-8 text-[#00ff41]" />
+        </div>
+        
+        <nav className="flex flex-col gap-8">
+          <button 
+            onClick={() => setActiveTab('dashboard')}
+            className={`p-2 transition-colors ${activeTab === 'dashboard' ? 'bg-[#00ff41] text-[#003907]' : 'text-[#ebffe2] hover:text-[#00ff41]'}`}
+          >
+            <Terminal className="w-6 h-6" />
+          </button>
+          <button 
+            onClick={() => setActiveTab('logs')}
+            className={`p-2 transition-colors ${activeTab === 'logs' ? 'bg-[#00ff41] text-[#003907]' : 'text-[#ebffe2] hover:text-[#00ff41]'}`}
+          >
+            <Activity className="w-6 h-6" />
+          </button>
+          <button className="p-2 text-[#ebffe2] hover:text-[#00ff41] transition-colors">
+            <Globe className="w-6 h-6" />
+          </button>
+          <button className="p-2 text-[#ebffe2] hover:text-[#00ff41] transition-colors">
+            <Settings className="w-6 h-6" />
+          </button>
+        </nav>
+
+        <div className="mt-auto">
+          <button className="p-2 text-[#ebffe2] hover:text-red-500 transition-colors">
+            <LogOut className="w-6 h-6" />
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="pl-16 min-h-screen">
+        {/* Header */}
+        <header className="h-16 border-b border-[#353534]/20 flex items-center px-8 justify-between bg-[#131313]/80 backdrop-blur-md sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <div className="w-2 h-2 bg-[#00ff41] rounded-full animate-pulse" />
+            <h1 className="text-xl font-bold tracking-tighter uppercase">
+              PINPOINT // OPERATOR_DASHBOARD
+            </h1>
+          </div>
+          <div className="flex items-center gap-6 text-sm opacity-60">
+            <div className="flex items-center gap-2">
+              <Cpu className="w-4 h-4" />
+              <span>SYS_LOAD: 12%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              <span>UPTIME: 14D 02H 44M</span>
+            </div>
+          </div>
+        </header>
+
+        <div className="p-8 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Generator */}
+          <div className="lg:col-span-2 space-y-8">
+            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#00ff41]" />
+              <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
+                <span className="w-2 h-2 bg-[#00ff41]" />
+                LINK_GENERATOR_MODULE
+              </h2>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs uppercase opacity-50 mb-2 tracking-widest">
+                    [TARGET_DESTINATION_URL]
+                  </label>
+                  <input 
+                    type="text" 
+                    value={targetUrl}
+                    onChange={(e) => setTargetUrl(e.target.value)}
+                    placeholder="https://target-destination.com/resource"
+                    className="w-full bg-[#131313] border border-[#353534]/40 px-4 py-3 focus:border-[#00ff41] focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <button 
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !targetUrl}
+                  className="w-full bg-[#00ff41] text-[#003907] py-4 font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#00ff41]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                >
+                  {isGenerating ? (
+                    <div className="w-5 h-5 border-2 border-[#003907] border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <LinkIcon className="w-5 h-5" />
+                      GENERATE_TRACKING_LINK
+                    </>
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {generatedLink && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-2"
+                    >
+                      <label className="block text-xs uppercase opacity-50 mb-2 tracking-widest">
+                        ENCRYPTED_URL
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="flex-1 bg-[#131313] border border-[#00ff41]/30 px-4 py-3 text-[#00ff41] break-all">
+                          {generatedLink}
+                        </div>
+                        <button 
+                          onClick={copyToClipboard}
+                          className="bg-[#353534]/20 border border-[#353534]/40 px-4 hover:bg-[#353534]/40 transition-colors"
+                        >
+                          {copied ? <Check className="w-5 h-5 text-[#00ff41]" /> : <Copy className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </section>
+
+            {/* Live Log Table */}
+            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6 relative">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#00ff41]" />
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <span className="w-2 h-2 bg-[#00ff41]" />
+                  LIVE_TARGETS_LOG
+                </h2>
+                <div className="text-[10px] opacity-40 uppercase tracking-tighter">
+                  UPTIME: 14D 02H 44M 12S
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-widest opacity-40 border-b border-[#353534]/20">
+                      <th className="py-4 font-normal">[TIMESTAMP]</th>
+                      <th className="py-4 font-normal">[IP_ADDRESS / ISP]</th>
+                      <th className="py-4 font-normal">[APPROX_LOCATION / TZ]</th>
+                      <th className="py-4 font-normal">[DEVICE / SCREEN]</th>
+                      <th className="py-4 font-normal">[STATUS]</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm">
+                    {logs.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center opacity-30 italic">
+                          WAITING FOR INCOMING TRANSMISSIONS...
+                        </td>
+                      </tr>
+                    ) : (
+                      logs.map((log, i) => (
+                        <motion.tr 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          key={i} 
+                          className="border-b border-[#353534]/10 hover:bg-[#00ff41]/5 transition-colors group"
+                        >
+                          <td className="py-4 opacity-60">
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                            <div className="text-[10px] opacity-40">{new Date(log.timestamp).toLocaleDateString()}</div>
+                          </td>
+                          <td className="py-4">
+                            <div className="text-[#00ff41] font-bold">{log.ipAddress}</div>
+                            <div className="text-[10px] opacity-50 truncate max-w-[150px]">{log.isp}</div>
+                          </td>
+                          <td className="py-4">
+                            <div>{log.location}</div>
+                            {log.fingerprint?.timezone && (
+                              <div className="text-[10px] text-yellow-500/70 flex items-center gap-1">
+                                <Globe className="w-3 h-3" /> {log.fingerprint.timezone}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4">
+                            <div className="opacity-60">{log.device}</div>
+                            {log.fingerprint?.screen && (
+                              <div className="text-[10px] opacity-40 flex items-center gap-1">
+                                <Monitor className="w-3 h-3" /> {log.fingerprint.screen}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4">
+                            <span className="px-2 py-0.5 bg-[#00ff41]/10 text-[#00ff41] text-[10px] border border-[#00ff41]/20">
+                              {log.fingerprint ? 'VERIFIED' : 'ACTIVE'}
+                            </span>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column: Parameters & Stats */}
+          <div className="space-y-8">
+            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
+              <h2 className="text-lg font-bold mb-6 uppercase tracking-tight">REDIRECTION_PARAMETERS</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-[#131313] border border-[#353534]/40">
+                  <span className="text-xs uppercase opacity-60">SPOOF_REFERRER</span>
+                  <div className="w-4 h-4 bg-[#00ff41] flex items-center justify-center">
+                    <Check className="w-3 h-3 text-[#003907]" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-[#131313] border border-[#353534]/40">
+                  <span className="text-xs uppercase opacity-60">INJECT_JS_FINGERPRINT</span>
+                  <div className="w-4 h-4 bg-[#00ff41] flex items-center justify-center">
+                    <Check className="w-3 h-3 text-[#003907]" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase opacity-40 mb-2">DELAY_REDIRECT (ms)</label>
+                  <div className="bg-[#131313] border border-[#353534]/40 p-3 text-[#00ff41]">
+                    1500
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 p-4 border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] space-y-1">
+                <p className="text-[#00ff41]">[!] STEALTH_MODE: ACTIVE</p>
+                <p className="opacity-60">[!] ENCRYPTION: AES-256-GCM</p>
+                <p className="opacity-60">[!] LOG_RETENTION: 24H</p>
+              </div>
+            </section>
+
+            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
+              <h2 className="text-lg font-bold mb-6 uppercase tracking-tight">SYSTEM_TELEMETRY</h2>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] uppercase opacity-60">
+                    <span>ACTIVE_SESSIONS</span>
+                    <span>124</span>
+                  </div>
+                  <div className="h-1 bg-[#353534]/40">
+                    <div className="h-full bg-[#00ff41] w-[65%]" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] uppercase opacity-60">
+                    <span>GLOBAL_TRAFFIC</span>
+                    <span>1.2 GB/S</span>
+                  </div>
+                  <div className="h-1 bg-[#353534]/40">
+                    <div className="h-full bg-[#00ff41] w-[42%]" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 border border-yellow-500/20 bg-yellow-500/5">
+                  <AlertCircle className="w-5 h-5 text-yellow-500" />
+                  <div className="text-[10px] uppercase">
+                    <p className="text-yellow-500 font-bold">ALERT_STATUS: NOMINAL</p>
+                    <p className="opacity-60">NO BREACHES DETECTED</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="pl-16 h-12 border-t border-[#353534]/20 flex items-center px-8 justify-between text-[10px] opacity-40 uppercase tracking-widest bg-[#0e0e0e]">
+        <div>© 2024 PINPOINT_OS // ENCRYPTED_TRANSMISSION</div>
+        <div className="flex gap-6">
+          <span className="text-[#00ff41]">STATUS_OK</span>
+          <span>MANUAL</span>
+          <span>API_DOCS</span>
+          <span>SUPPORT</span>
+        </div>
+      </footer>
+    </div>
+  );
+}
