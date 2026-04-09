@@ -352,109 +352,11 @@ export default function App() {
             </div>
           </div>
         );
-      case 'logs':
-        return (
-          <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6 relative">
-            <div className="absolute top-0 left-0 w-1 h-full bg-[#00ff41]" />
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <span className="w-2 h-2 bg-[#00ff41]" />
-                LIVE_TARGETS_LOG
-              </h2>
-              <div className="text-[10px] opacity-40 uppercase tracking-tighter">
-                TOTAL_RECORDS: {logs.length}
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="text-[10px] uppercase tracking-widest opacity-40 border-b border-[#353534]/20">
-                    <th className="py-4 font-normal">[TIMESTAMP]</th>
-                    <th className="py-4 font-normal">[IP_ADDRESS / ISP]</th>
-                    <th className="py-4 font-normal">[APPROX_LOCATION / TZ]</th>
-                    <th className="py-4 font-normal">[DEVICE / SCREEN]</th>
-                    <th className="py-4 font-normal">[STATUS]</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {logs.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center opacity-30 italic">
-                        WAITING FOR INCOMING TRANSMISSIONS...
-                      </td>
-                    </tr>
-                  ) : (
-                      <React.Fragment key={i}>
-                        <motion.tr 
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="border-b border-[#353534]/10 hover:bg-[#00ff41]/5 transition-colors group"
-                        >
-                          <td className="py-4 opacity-60">
-                            {new Date(log.timestamp).toLocaleTimeString()}
-                            <div className="text-[10px] opacity-40">{new Date(log.timestamp).toLocaleDateString()}</div>
-                          </td>
-                          <td className="py-4">
-                            <div className="text-[#00ff41] font-bold">{log.ipAddress}</div>
-                            <div className="text-[10px] opacity-50 truncate max-w-[150px]">{log.isp}</div>
-                          </td>
-                          <td className="py-4">
-                            <div>{log.location}</div>
-                            {log.fingerprint?.timezone && (
-                              <div className="text-[10px] text-yellow-500/70 flex items-center gap-1">
-                                <Globe className="w-3 h-3" /> {log.fingerprint.timezone}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-4">
-                            <div className="opacity-60">{log.device}</div>
-                            {log.fingerprint?.screen && (
-                              <div className="text-[10px] opacity-40 flex items-center gap-1">
-                                <Monitor className="w-3 h-3" /> {log.fingerprint.screen}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-4">
-                            <div className="flex flex-col gap-2">
-                              <span className="px-2 py-0.5 bg-[#00ff41]/10 text-[#00ff41] text-[10px] border border-[#00ff41]/20 w-fit">
-                                {log.fingerprint ? 'VERIFIED' : 'ACTIVE'}
-                              </span>
-                              <button 
-                                onClick={() => handleAnalyze(log, i)}
-                                disabled={analyzingId === `${log.id}-${log.timestamp}`}
-                                className="text-[10px] uppercase text-[#00ff41] hover:underline flex items-center gap-1 disabled:opacity-50"
-                              >
-                                {analyzingId === `${log.id}-${log.timestamp}` ? (
-                                  <div className="w-2 h-2 border border-[#00ff41] border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  <Cpu className="w-3 h-3" />
-                                )}
-                                AI_ANALYZE
-                              </button>
-                            </div>
-                          </td>
-                        </motion.tr>
-                        {analysisResults[`${log.id}-${log.timestamp}`] && (
-                          <tr className="bg-[#00ff41]/5 border-b border-[#353534]/10">
-                            <td colSpan={5} className="py-3 px-4">
-                              <div className="text-[10px] text-[#00ff41] leading-relaxed font-mono">
-                                {analysisResults[`${log.id}-${log.timestamp}`]}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        );
       case 'map':
         return (
           <div className="space-y-8">
             <TacticalMap logs={logs} />
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
                 <h3 className="text-sm font-bold mb-4 uppercase text-[#00ff41]">GEO_DISTRIBUTION</h3>
@@ -478,6 +380,106 @@ export default function App() {
                 </div>
               </section>
             </div>
+
+            {/* Integrated Logs Table */}
+            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6 relative">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#00ff41]" />
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <span className="w-2 h-2 bg-[#00ff41]" />
+                  LIVE_TARGETS_LOG
+                </h2>
+                <div className="text-[10px] opacity-40 uppercase tracking-tighter">
+                  TOTAL_RECORDS: {logs.length}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-widest opacity-40 border-b border-[#353534]/20">
+                      <th className="py-4 font-normal">[TIMESTAMP]</th>
+                      <th className="py-4 font-normal">[IP_ADDRESS / ISP]</th>
+                      <th className="py-4 font-normal">[APPROX_LOCATION / TZ]</th>
+                      <th className="py-4 font-normal">[DEVICE / SCREEN]</th>
+                      <th className="py-4 font-normal">[STATUS]</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm">
+                    {logs.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center opacity-30 italic">
+                          WAITING FOR INCOMING TRANSMISSIONS...
+                        </td>
+                      </tr>
+                    ) : (
+                      logs.map((log, i) => (
+                        <React.Fragment key={i}>
+                          <motion.tr 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="border-b border-[#353534]/10 hover:bg-[#00ff41]/5 transition-colors group"
+                          >
+                            <td className="py-4 opacity-60">
+                              {new Date(log.timestamp).toLocaleTimeString()}
+                              <div className="text-[10px] opacity-40">{new Date(log.timestamp).toLocaleDateString()}</div>
+                            </td>
+                            <td className="py-4">
+                              <div className="text-[#00ff41] font-bold">{log.ipAddress}</div>
+                              <div className="text-[10px] opacity-50 truncate max-w-[150px]">{log.isp}</div>
+                            </td>
+                            <td className="py-4">
+                              <div>{log.location}</div>
+                              {log.fingerprint?.timezone && (
+                                <div className="text-[10px] text-yellow-500/70 flex items-center gap-1">
+                                  <Globe className="w-3 h-3" /> {log.fingerprint.timezone}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-4">
+                              <div className="opacity-60">{log.device}</div>
+                              {log.fingerprint?.screen && (
+                                <div className="text-[10px] opacity-40 flex items-center gap-1">
+                                  <Monitor className="w-3 h-3" /> {log.fingerprint.screen}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-4">
+                              <div className="flex flex-col gap-2">
+                                <span className="px-2 py-0.5 bg-[#00ff41]/10 text-[#00ff41] text-[10px] border border-[#00ff41]/20 w-fit">
+                                  {log.fingerprint ? 'VERIFIED' : 'ACTIVE'}
+                                </span>
+                                <button 
+                                  onClick={() => handleAnalyze(log, i)}
+                                  disabled={analyzingId === `${log.id}-${log.timestamp}`}
+                                  className="text-[10px] uppercase text-[#00ff41] hover:underline flex items-center gap-1 disabled:opacity-50"
+                                >
+                                  {analyzingId === `${log.id}-${log.timestamp}` ? (
+                                    <div className="w-2 h-2 border border-[#00ff41] border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Cpu className="w-3 h-3" />
+                                  )}
+                                  AI_ANALYZE
+                                </button>
+                              </div>
+                            </td>
+                          </motion.tr>
+                          {analysisResults[`${log.id}-${log.timestamp}`] && (
+                            <tr className="bg-[#00ff41]/5 border-b border-[#353534]/10">
+                              <td colSpan={5} className="py-3 px-4">
+                                <div className="text-[10px] text-[#00ff41] leading-relaxed font-mono">
+                                  {analysisResults[`${log.id}-${log.timestamp}`]}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </div>
         );
       case 'settings':
@@ -542,15 +544,8 @@ export default function App() {
             <Terminal className="w-6 h-6" />
           </button>
           <button 
-            onClick={() => setActiveTab('logs')}
-            title="TRANSMISSION_LOGS"
-            className={`p-2 transition-colors ${activeTab === 'logs' ? 'bg-[#00ff41] text-[#003907]' : 'text-[#ebffe2] hover:text-[#00ff41]'}`}
-          >
-            <Activity className="w-6 h-6" />
-          </button>
-          <button 
             onClick={() => setActiveTab('map')}
-            title="GLOBAL_MAP"
+            title="GLOBAL_INTELLIGENCE"
             className={`p-2 transition-colors ${activeTab === 'map' ? 'bg-[#00ff41] text-[#003907]' : 'text-[#ebffe2] hover:text-[#00ff41]'}`}
           >
             <Globe className="w-6 h-6" />

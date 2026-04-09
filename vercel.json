@@ -1,3 +1,0 @@
-git add vercel.json
-git commit -m "fix: force node build on vercel"
-git push

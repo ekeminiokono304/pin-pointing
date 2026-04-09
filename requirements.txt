@@ -1,0 +1,21 @@
+# PINPOINT Dependencies (Node.js)
+# Note: This project uses package.json for dependency management.
+# This file is provided for reference as requested.
+
+express
+express-useragent
+axios
+cors
+nanoid
+react
+react-dom
+vite
+@vitejs/plugin-react
+@tailwindcss/vite
+motion
+lucide-react
+d3
+topojson-client
+tsx
+typescript
+dotenv
