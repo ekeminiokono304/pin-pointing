@@ -183,6 +183,295 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleLogout = () => {
+    if (window.confirm("TERMINATE SESSION?")) {
+      window.location.reload();
+    }
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column: Generator */}
+            <div className="lg:col-span-2 space-y-8">
+              <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6 relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-1 h-full bg-[#00ff41]" />
+                <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-[#00ff41]" />
+                  LINK_GENERATOR_MODULE
+                </h2>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-xs uppercase opacity-50 mb-2 tracking-widest">
+                      [TARGET_DESTINATION_URL]
+                    </label>
+                    <input 
+                      type="text" 
+                      value={targetUrl}
+                      onChange={(e) => setTargetUrl(e.target.value)}
+                      placeholder="https://target-destination.com/resource"
+                      className="w-full bg-[#131313] border border-[#353534]/40 px-4 py-3 focus:border-[#00ff41] focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <button 
+                    onClick={handleGenerate}
+                    disabled={isGenerating || !targetUrl}
+                    className="w-full bg-[#00ff41] text-[#003907] py-4 font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#00ff41]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                  >
+                    {isGenerating ? (
+                      <div className="w-5 h-5 border-2 border-[#003907] border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <LinkIcon className="w-5 h-5" />
+                        GENERATE_TRACKING_LINK
+                      </>
+                    )}
+                  </button>
+
+                  <AnimatePresence>
+                    {generatedLink && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-2"
+                      >
+                        <label className="block text-xs uppercase opacity-50 mb-2 tracking-widest">
+                          ENCRYPTED_URL
+                        </label>
+                        <div className="flex gap-2">
+                          <div className="flex-1 bg-[#131313] border border-[#00ff41]/30 px-4 py-3 text-[#00ff41] break-all">
+                            {generatedLink}
+                          </div>
+                          <button 
+                            onClick={copyToClipboard}
+                            className="bg-[#353534]/20 border border-[#353534]/40 px-4 hover:bg-[#353534]/40 transition-colors"
+                          >
+                            {copied ? <Check className="w-5 h-5 text-[#00ff41]" /> : <Copy className="w-5 h-5" />}
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </section>
+              
+              {/* Tactical Map Visualization */}
+              <TacticalMap logs={logs} />
+            </div>
+
+            {/* Right Column: Parameters & Stats */}
+            <div className="space-y-8">
+              <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
+                <h2 className="text-lg font-bold mb-6 uppercase tracking-tight">REDIRECTION_PARAMETERS</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-[#131313] border border-[#353534]/40">
+                    <span className="text-xs uppercase opacity-60">SPOOF_REFERRER</span>
+                    <div className="w-4 h-4 bg-[#00ff41] flex items-center justify-center">
+                      <Check className="w-3 h-3 text-[#003907]" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-[#131313] border border-[#353534]/40">
+                    <span className="text-xs uppercase opacity-60">INJECT_JS_FINGERPRINT</span>
+                    <div className="w-4 h-4 bg-[#00ff41] flex items-center justify-center">
+                      <Check className="w-3 h-3 text-[#003907]" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase opacity-40 mb-2">DELAY_REDIRECT (ms)</label>
+                    <div className="bg-[#131313] border border-[#353534]/40 p-3 text-[#00ff41]">
+                      1500
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-8 p-4 border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] space-y-1">
+                  <p className="text-[#00ff41]">[!] STEALTH_MODE: ACTIVE</p>
+                  <p className="opacity-60">[!] ENCRYPTION: AES-256-GCM</p>
+                  <p className="opacity-60">[!] LOG_RETENTION: 24H</p>
+                </div>
+              </section>
+
+              <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
+                <h2 className="text-lg font-bold mb-6 uppercase tracking-tight">SYSTEM_TELEMETRY</h2>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] uppercase opacity-60">
+                      <span>ACTIVE_SESSIONS</span>
+                      <span>{logs.length}</span>
+                    </div>
+                    <div className="h-1 bg-[#353534]/40">
+                      <div className="h-full bg-[#00ff41]" style={{ width: `${Math.min(logs.length * 10, 100)}%` }} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] uppercase opacity-60">
+                      <span>GLOBAL_TRAFFIC</span>
+                      <span>1.2 GB/S</span>
+                    </div>
+                    <div className="h-1 bg-[#353534]/40">
+                      <div className="h-full bg-[#00ff41] w-[42%]" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 border border-yellow-500/20 bg-yellow-500/5">
+                    <AlertCircle className="w-5 h-5 text-yellow-500" />
+                    <div className="text-[10px] uppercase">
+                      <p className="text-yellow-500 font-bold">ALERT_STATUS: NOMINAL</p>
+                      <p className="opacity-60">NO BREACHES DETECTED</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        );
+      case 'logs':
+        return (
+          <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6 relative">
+            <div className="absolute top-0 left-0 w-1 h-full bg-[#00ff41]" />
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <span className="w-2 h-2 bg-[#00ff41]" />
+                LIVE_TARGETS_LOG
+              </h2>
+              <div className="text-[10px] opacity-40 uppercase tracking-tighter">
+                TOTAL_RECORDS: {logs.length}
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-widest opacity-40 border-b border-[#353534]/20">
+                    <th className="py-4 font-normal">[TIMESTAMP]</th>
+                    <th className="py-4 font-normal">[IP_ADDRESS / ISP]</th>
+                    <th className="py-4 font-normal">[APPROX_LOCATION / TZ]</th>
+                    <th className="py-4 font-normal">[DEVICE / SCREEN]</th>
+                    <th className="py-4 font-normal">[STATUS]</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {logs.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center opacity-30 italic">
+                        WAITING FOR INCOMING TRANSMISSIONS...
+                      </td>
+                    </tr>
+                  ) : (
+                    logs.map((log, i) => (
+                      <motion.tr 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        key={i} 
+                        className="border-b border-[#353534]/10 hover:bg-[#00ff41]/5 transition-colors group"
+                      >
+                        <td className="py-4 opacity-60">
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                          <div className="text-[10px] opacity-40">{new Date(log.timestamp).toLocaleDateString()}</div>
+                        </td>
+                        <td className="py-4">
+                          <div className="text-[#00ff41] font-bold">{log.ipAddress}</div>
+                          <div className="text-[10px] opacity-50 truncate max-w-[150px]">{log.isp}</div>
+                        </td>
+                        <td className="py-4">
+                          <div>{log.location}</div>
+                          {log.fingerprint?.timezone && (
+                            <div className="text-[10px] text-yellow-500/70 flex items-center gap-1">
+                              <Globe className="w-3 h-3" /> {log.fingerprint.timezone}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-4">
+                          <div className="opacity-60">{log.device}</div>
+                          {log.fingerprint?.screen && (
+                            <div className="text-[10px] opacity-40 flex items-center gap-1">
+                              <Monitor className="w-3 h-3" /> {log.fingerprint.screen}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-4">
+                          <span className="px-2 py-0.5 bg-[#00ff41]/10 text-[#00ff41] text-[10px] border border-[#00ff41]/20">
+                            {log.fingerprint ? 'VERIFIED' : 'ACTIVE'}
+                          </span>
+                        </td>
+                      </motion.tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      case 'map':
+        return (
+          <div className="space-y-8">
+            <TacticalMap logs={logs} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
+                <h3 className="text-sm font-bold mb-4 uppercase text-[#00ff41]">GEO_DISTRIBUTION</h3>
+                <div className="space-y-2">
+                  {Array.from(new Set(logs.map(l => l.location.split(',').pop()?.trim()))).slice(0, 5).map((country, i) => (
+                    <div key={i} className="flex justify-between text-xs">
+                      <span className="opacity-60">{country || 'UNKNOWN'}</span>
+                      <span className="text-[#00ff41]">{logs.filter(l => l.location.includes(country || '')).length}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
+                <h3 className="text-sm font-bold mb-4 uppercase text-[#00ff41]">SIGNAL_STRENGTH</h3>
+                <div className="flex items-end gap-1 h-24">
+                  {[40, 70, 45, 90, 65, 80, 55, 30, 85, 60].map((h, i) => (
+                    <div key={i} className="flex-1 bg-[#00ff41]/20 relative group">
+                      <div className="absolute bottom-0 left-0 w-full bg-[#00ff41] transition-all duration-500" style={{ height: `${h}%` }} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="max-w-2xl space-y-8">
+            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
+              <h2 className="text-lg font-bold mb-6 uppercase tracking-tight text-[#00ff41]">SYSTEM_CONFIGURATION</h2>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs uppercase opacity-50">API_ENDPOINT_OVERRIDE</label>
+                  <input type="text" readOnly value={window.location.origin} className="w-full bg-[#131313] border border-[#353534]/40 p-3 text-sm opacity-60" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase opacity-60">AUTO_REFRESH_LOGS</span>
+                  <div className="w-12 h-6 bg-[#00ff41]/20 border border-[#00ff41]/40 relative cursor-pointer">
+                    <div className="absolute right-1 top-1 w-4 h-4 bg-[#00ff41]" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase opacity-60">ENCRYPT_LOCAL_STORAGE</span>
+                  <div className="w-12 h-6 bg-[#131313] border border-[#353534]/40 relative cursor-pointer">
+                    <div className="absolute left-1 top-1 w-4 h-4 bg-[#353534]" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
+              <h2 className="text-lg font-bold mb-6 uppercase tracking-tight text-red-500">DANGER_ZONE</h2>
+              <button className="w-full border border-red-500/40 text-red-500 py-3 text-xs uppercase hover:bg-red-500/10 transition-colors">
+                PURGE_ALL_TRANSMISSION_LOGS
+              </button>
+            </section>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#131313] text-[#ebffe2] font-mono selection:bg-[#00ff41] selection:text-[#003907] relative overflow-hidden">
       {/* Scanline Overlay */}
@@ -201,26 +490,40 @@ export default function App() {
         <nav className="flex flex-col gap-8">
           <button 
             onClick={() => setActiveTab('dashboard')}
+            title="DASHBOARD"
             className={`p-2 transition-colors ${activeTab === 'dashboard' ? 'bg-[#00ff41] text-[#003907]' : 'text-[#ebffe2] hover:text-[#00ff41]'}`}
           >
             <Terminal className="w-6 h-6" />
           </button>
           <button 
             onClick={() => setActiveTab('logs')}
+            title="TRANSMISSION_LOGS"
             className={`p-2 transition-colors ${activeTab === 'logs' ? 'bg-[#00ff41] text-[#003907]' : 'text-[#ebffe2] hover:text-[#00ff41]'}`}
           >
             <Activity className="w-6 h-6" />
           </button>
-          <button className="p-2 text-[#ebffe2] hover:text-[#00ff41] transition-colors">
+          <button 
+            onClick={() => setActiveTab('map')}
+            title="GLOBAL_MAP"
+            className={`p-2 transition-colors ${activeTab === 'map' ? 'bg-[#00ff41] text-[#003907]' : 'text-[#ebffe2] hover:text-[#00ff41]'}`}
+          >
             <Globe className="w-6 h-6" />
           </button>
-          <button className="p-2 text-[#ebffe2] hover:text-[#00ff41] transition-colors">
+          <button 
+            onClick={() => setActiveTab('settings')}
+            title="SYSTEM_SETTINGS"
+            className={`p-2 transition-colors ${activeTab === 'settings' ? 'bg-[#00ff41] text-[#003907]' : 'text-[#ebffe2] hover:text-[#00ff41]'}`}
+          >
             <Settings className="w-6 h-6" />
           </button>
         </nav>
 
         <div className="mt-auto">
-          <button className="p-2 text-[#ebffe2] hover:text-red-500 transition-colors">
+          <button 
+            onClick={handleLogout}
+            title="TERMINATE_SESSION"
+            className="p-2 text-[#ebffe2] hover:text-red-500 transition-colors"
+          >
             <LogOut className="w-6 h-6" />
           </button>
         </div>
@@ -233,7 +536,7 @@ export default function App() {
           <div className="flex items-center gap-4">
             <div className="w-2 h-2 bg-[#00ff41] rounded-full animate-pulse" />
             <h1 className="text-xl font-bold tracking-tighter uppercase">
-              PINPOINT // OPERATOR_DASHBOARD
+              PINPOINT // {activeTab.toUpperCase()}_VIEW
             </h1>
           </div>
           <div className="flex items-center gap-6 text-sm opacity-60">
@@ -248,215 +551,18 @@ export default function App() {
           </div>
         </header>
 
-        <div className="p-8 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Generator */}
-          <div className="lg:col-span-2 space-y-8">
-            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6 relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-1 h-full bg-[#00ff41]" />
-              <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 bg-[#00ff41]" />
-                LINK_GENERATOR_MODULE
-              </h2>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-xs uppercase opacity-50 mb-2 tracking-widest">
-                    [TARGET_DESTINATION_URL]
-                  </label>
-                  <input 
-                    type="text" 
-                    value={targetUrl}
-                    onChange={(e) => setTargetUrl(e.target.value)}
-                    placeholder="https://target-destination.com/resource"
-                    className="w-full bg-[#131313] border border-[#353534]/40 px-4 py-3 focus:border-[#00ff41] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                <button 
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !targetUrl}
-                  className="w-full bg-[#00ff41] text-[#003907] py-4 font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#00ff41]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
-                >
-                  {isGenerating ? (
-                    <div className="w-5 h-5 border-2 border-[#003907] border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <LinkIcon className="w-5 h-5" />
-                      GENERATE_TRACKING_LINK
-                    </>
-                  )}
-                </button>
-
-                <AnimatePresence>
-                  {generatedLink && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-2"
-                    >
-                      <label className="block text-xs uppercase opacity-50 mb-2 tracking-widest">
-                        ENCRYPTED_URL
-                      </label>
-                      <div className="flex gap-2">
-                        <div className="flex-1 bg-[#131313] border border-[#00ff41]/30 px-4 py-3 text-[#00ff41] break-all">
-                          {generatedLink}
-                        </div>
-                        <button 
-                          onClick={copyToClipboard}
-                          className="bg-[#353534]/20 border border-[#353534]/40 px-4 hover:bg-[#353534]/40 transition-colors"
-                        >
-                          {copied ? <Check className="w-5 h-5 text-[#00ff41]" /> : <Copy className="w-5 h-5" />}
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </section>
-            
-            {/* Tactical Map Visualization */}
-            <TacticalMap logs={logs} />
-
-            {/* Live Log Table */}
-            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6 relative">
-              <div className="absolute top-0 left-0 w-1 h-full bg-[#00ff41]" />
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-bold flex items-center gap-2">
-                  <span className="w-2 h-2 bg-[#00ff41]" />
-                  LIVE_TARGETS_LOG
-                </h2>
-                <div className="text-[10px] opacity-40 uppercase tracking-tighter">
-                  UPTIME: 14D 02H 44M 12S
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="text-[10px] uppercase tracking-widest opacity-40 border-b border-[#353534]/20">
-                      <th className="py-4 font-normal">[TIMESTAMP]</th>
-                      <th className="py-4 font-normal">[IP_ADDRESS / ISP]</th>
-                      <th className="py-4 font-normal">[APPROX_LOCATION / TZ]</th>
-                      <th className="py-4 font-normal">[DEVICE / SCREEN]</th>
-                      <th className="py-4 font-normal">[STATUS]</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {logs.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-12 text-center opacity-30 italic">
-                          WAITING FOR INCOMING TRANSMISSIONS...
-                        </td>
-                      </tr>
-                    ) : (
-                      logs.map((log, i) => (
-                        <motion.tr 
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          key={i} 
-                          className="border-b border-[#353534]/10 hover:bg-[#00ff41]/5 transition-colors group"
-                        >
-                          <td className="py-4 opacity-60">
-                            {new Date(log.timestamp).toLocaleTimeString()}
-                            <div className="text-[10px] opacity-40">{new Date(log.timestamp).toLocaleDateString()}</div>
-                          </td>
-                          <td className="py-4">
-                            <div className="text-[#00ff41] font-bold">{log.ipAddress}</div>
-                            <div className="text-[10px] opacity-50 truncate max-w-[150px]">{log.isp}</div>
-                          </td>
-                          <td className="py-4">
-                            <div>{log.location}</div>
-                            {log.fingerprint?.timezone && (
-                              <div className="text-[10px] text-yellow-500/70 flex items-center gap-1">
-                                <Globe className="w-3 h-3" /> {log.fingerprint.timezone}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-4">
-                            <div className="opacity-60">{log.device}</div>
-                            {log.fingerprint?.screen && (
-                              <div className="text-[10px] opacity-40 flex items-center gap-1">
-                                <Monitor className="w-3 h-3" /> {log.fingerprint.screen}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-4">
-                            <span className="px-2 py-0.5 bg-[#00ff41]/10 text-[#00ff41] text-[10px] border border-[#00ff41]/20">
-                              {log.fingerprint ? 'VERIFIED' : 'ACTIVE'}
-                            </span>
-                          </td>
-                        </motion.tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-
-          {/* Right Column: Parameters & Stats */}
-          <div className="space-y-8">
-            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
-              <h2 className="text-lg font-bold mb-6 uppercase tracking-tight">REDIRECTION_PARAMETERS</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-[#131313] border border-[#353534]/40">
-                  <span className="text-xs uppercase opacity-60">SPOOF_REFERRER</span>
-                  <div className="w-4 h-4 bg-[#00ff41] flex items-center justify-center">
-                    <Check className="w-3 h-3 text-[#003907]" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-[#131313] border border-[#353534]/40">
-                  <span className="text-xs uppercase opacity-60">INJECT_JS_FINGERPRINT</span>
-                  <div className="w-4 h-4 bg-[#00ff41] flex items-center justify-center">
-                    <Check className="w-3 h-3 text-[#003907]" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] uppercase opacity-40 mb-2">DELAY_REDIRECT (ms)</label>
-                  <div className="bg-[#131313] border border-[#353534]/40 p-3 text-[#00ff41]">
-                    1500
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-8 p-4 border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] space-y-1">
-                <p className="text-[#00ff41]">[!] STEALTH_MODE: ACTIVE</p>
-                <p className="opacity-60">[!] ENCRYPTION: AES-256-GCM</p>
-                <p className="opacity-60">[!] LOG_RETENTION: 24H</p>
-              </div>
-            </section>
-
-            <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6">
-              <h2 className="text-lg font-bold mb-6 uppercase tracking-tight">SYSTEM_TELEMETRY</h2>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[10px] uppercase opacity-60">
-                    <span>ACTIVE_SESSIONS</span>
-                    <span>124</span>
-                  </div>
-                  <div className="h-1 bg-[#353534]/40">
-                    <div className="h-full bg-[#00ff41] w-[65%]" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[10px] uppercase opacity-60">
-                    <span>GLOBAL_TRAFFIC</span>
-                    <span>1.2 GB/S</span>
-                  </div>
-                  <div className="h-1 bg-[#353534]/40">
-                    <div className="h-full bg-[#00ff41] w-[42%]" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 border border-yellow-500/20 bg-yellow-500/5">
-                  <AlertCircle className="w-5 h-5 text-yellow-500" />
-                  <div className="text-[10px] uppercase">
-                    <p className="text-yellow-500 font-bold">ALERT_STATUS: NOMINAL</p>
-                    <p className="opacity-60">NO BREACHES DETECTED</p>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
+        <div className="p-8 max-w-7xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 
@@ -465,9 +571,9 @@ export default function App() {
         <div>© 2024 PINPOINT_OS // ENCRYPTED_TRANSMISSION</div>
         <div className="flex gap-6">
           <span className="text-[#00ff41]">STATUS_OK</span>
-          <span>MANUAL</span>
-          <span>API_DOCS</span>
-          <span>SUPPORT</span>
+          <span className="cursor-pointer hover:text-[#00ff41]" onClick={() => setActiveTab('settings')}>MANUAL</span>
+          <span className="cursor-pointer hover:text-[#00ff41]" onClick={() => setActiveTab('settings')}>API_DOCS</span>
+          <span className="cursor-pointer hover:text-[#00ff41]" onClick={() => setActiveTab('settings')}>SUPPORT</span>
         </div>
       </footer>
     </div>
