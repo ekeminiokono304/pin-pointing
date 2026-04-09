@@ -9,3 +9,9 @@
 body {
   @apply font-mono bg-[#131313];
 }
+
+@layer utilities {
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+  }
+}

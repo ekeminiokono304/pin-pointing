@@ -21,6 +21,8 @@ interface LogEntry {
   ipAddress: string;
   location: string;
   isp: string;
+  lat: number;
+  lon: number;
   device: string;
   browser: string;
   id: string;
@@ -31,6 +33,102 @@ interface LogEntry {
     platform: string;
   };
 }
+
+// Tactical Map Component using D3
+import * as d3 from 'd3';
+import * as topojson from 'topojson-client';
+
+const TacticalMap = ({ logs }: { logs: LogEntry[] }) => {
+  const svgRef = React.useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    if (!svgRef.current) return;
+
+    const svg = d3.select(svgRef.current);
+    const width = 800;
+    const height = 400;
+
+    // Clear previous content
+    svg.selectAll("*").remove();
+
+    const projection = d3.geoMercator()
+      .scale(120)
+      .translate([width / 2, height / 1.5]);
+
+    const path = d3.geoPath().projection(projection);
+
+    // Load world data
+    d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then((data: any) => {
+      const countries = topojson.feature(data, data.objects.countries) as any;
+
+      // Draw countries
+      svg.append("g")
+        .selectAll("path")
+        .data(countries.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("fill", "#1a1a1a")
+        .attr("stroke", "#353534")
+        .attr("stroke-width", 0.5);
+
+      // Draw points for logs
+      const points = logs.filter(l => l.lat !== 0 && l.lon !== 0);
+      
+      svg.append("g")
+        .selectAll("circle")
+        .data(points)
+        .enter()
+        .append("circle")
+        .attr("cx", d => projection([d.lon, d.lat])![0])
+        .attr("cy", d => projection([d.lon, d.lat])![1])
+        .attr("r", 4)
+        .attr("fill", "#00ff41")
+        .attr("class", "pulse-point")
+        .append("title")
+        .text(d => `${d.ipAddress} - ${d.location}`);
+
+      // Add pulse effect
+      svg.selectAll(".pulse-point")
+        .each(function() {
+          const circle = d3.select(this);
+          (function repeat() {
+            circle
+              .transition()
+              .duration(2000)
+              .attr("r", 8)
+              .attr("opacity", 0)
+              .transition()
+              .duration(0)
+              .attr("r", 4)
+              .attr("opacity", 1)
+              .on("end", repeat);
+          })();
+        });
+    });
+  }, [logs]);
+
+  return (
+    <div className="relative w-full aspect-[2/1] bg-[#0e0e0e] border border-[#353534]/20 overflow-hidden">
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-2 px-2 py-1 bg-[#131313]/80 border border-[#00ff41]/20 text-[10px] uppercase tracking-widest text-[#00ff41]">
+        <Globe className="w-3 h-3 animate-spin-slow" />
+        GLOBAL_THREAT_MAP
+      </div>
+      <svg
+        ref={svgRef}
+        viewBox="0 0 800 400"
+        className="w-full h-full"
+        style={{ filter: 'drop-shadow(0 0 10px rgba(0, 255, 65, 0.1))' }}
+      />
+      {/* Map Overlay Stats */}
+      <div className="absolute bottom-4 left-4 space-y-1 bg-[#131313]/60 p-2 border-l border-[#00ff41]">
+        <div className="text-[10px] opacity-60 uppercase">ACTIVE_SESSIONS: <span className="text-[#00ff41]">{logs.length}</span></div>
+        <div className="text-[10px] opacity-60 uppercase">GLOBAL_TRAFFIC: <span className="text-[#00ff41]">1.2 GB/S</span></div>
+        <div className="text-[10px] opacity-60 uppercase">ALERT_STATUS: <span className="text-[#00ff41]">NOMINAL</span></div>
+      </div>
+    </div>
+  );
+};
 
 export default function App() {
   const [targetUrl, setTargetUrl] = useState('');
@@ -215,6 +313,9 @@ export default function App() {
                 </AnimatePresence>
               </div>
             </section>
+            
+            {/* Tactical Map Visualization */}
+            <TacticalMap logs={logs} />
 
             {/* Live Log Table */}
             <section className="bg-[#0e0e0e] border border-[#353534]/20 p-6 relative">

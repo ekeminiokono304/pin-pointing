@@ -67,12 +67,16 @@ async function startServer() {
 
     let location = 'Unknown';
     let isp = 'Unknown';
+    let lat = 0;
+    let lon = 0;
     try {
       if (ip && ip !== '::1' && ip !== '127.0.0.1' && !ip.startsWith('10.') && !ip.startsWith('172.')) {
-        const geoResponse = await axios.get(`http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,isp,org,as,query`);
+        const geoResponse = await axios.get(`http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,isp,org,as,query,lat,lon`);
         if (geoResponse.data.status === 'success') {
           location = `${geoResponse.data.city}, ${geoResponse.data.regionName}, ${geoResponse.data.country}`;
           isp = geoResponse.data.isp;
+          lat = geoResponse.data.lat;
+          lon = geoResponse.data.lon;
         }
       }
     } catch (error) {
@@ -84,6 +88,8 @@ async function startServer() {
       ipAddress: ip,
       location,
       isp,
+      lat,
+      lon,
       device: `${ua?.platform} ${ua?.os}`,
       browser: ua?.browser,
       id,
